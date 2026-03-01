@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elite Arena | Pro Multi-Market</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ffa3; --bg: #0b0e11; --card: #15191d;
+            --text: #ffffff; --gray: #929aa5; --accent: #7042ff;
+            --win: #00ffa3; --loss: #ff4d4d;
+        }
+
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 90px; }
+        .hidden { display: none !important; }
+        .glass { background: rgba(21, 25, 29, 0.8); backdrop-filter: blur(10px); border-bottom: 1px solid #232a31; }
+
+        /* --- AUTH & ADMIN LOGIN --- */
+        #auth-screen, #admin-login-screen {
+            height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .auth-card { background: var(--card); padding: 30px; border-radius: 20px; width: 320px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #1e2329; border: 1px solid #2d343c; color: white; border-radius: 8px; box-sizing: border-box; }
+        .btn-glow { background: var(--primary); color: #000; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: 800; cursor: pointer; margin-top: 10px; }
+        .admin-link { margin-top: 20px; font-size: 0.7rem; color: var(--gray); cursor: pointer; text-decoration: underline; }
+
+        /* --- NOTIFICATION BAR --- */
+        #notif-bar { background: var(--accent); color: white; font-size: 0.75rem; padding: 8px; text-align: center; font-weight: 600; }
+
+        /* --- HEADER & NAV --- */
+        header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .balance-pill { background: #1e2329; padding: 6px 15px; border-radius: 50px; border: 1px solid #2d343c; }
+        nav { position: fixed; bottom: 0; width: 100%; height: 70px; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #232a31; background: var(--bg); z-index: 100; }
+        .nav-item { color: var(--gray); font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+
+        /* --- MARKET TABS --- */
+        .market-nav { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; margin-bottom: 10px; scrollbar-width: none; }
+        .market-tab { background: #1e2329; padding: 8px 15px; border-radius: 20px; font-size: 0.7rem; white-space: nowrap; cursor: pointer; border: 1px solid #2d343c; color: var(--gray); }
+        .market-tab.active { background: var(--primary); color: #000; border-color: var(--primary); }
+
+        /* --- MATCH & SLIP --- */
+        main { padding: 15px; max-width: 500px; margin: auto; }
+        .match-box { background: var(--card); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #232a31; }
+        .odds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .odds-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+        .odd-card { background: #1e2329; padding: 12px; border-radius: 10px; text-align: center; cursor: pointer; border: 1px solid transparent; transition: 0.2s; }
+        .odd-card:active { border-color: var(--primary); background: #232a31; }
+        .odd-label { display: block; font-size: 0.65rem; color: var(--gray); margin-bottom: 4px; }
+        .odd-val { font-weight: 700; color: var(--primary); font-size: 1.1rem; }
+        
+        #bet-slip { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 380px; padding: 20px; border-radius: 20px; background: #1e2329; border: 2px solid var(--primary); z-index: 1000; box-shadow: 0 -10px 40px rgba(0,0,0,0.5); }
+
+        /* --- ADMIN PAGE STYLES --- */
+        .admin-page { padding: 20px; max-width: 600px; margin: auto; }
+        .admin-card { background: var(--card); padding: 20px; border-radius: 15px; margin-bottom: 15px; border-left: 4px solid var(--accent); }
+        .logout-btn { background: #ff4d4d; color: white; padding: 5px 10px; font-size: 0.7rem; border-radius: 5px; float: right; border: none; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-card">
+            <h2 style="margin:0 0 10px 0;">ELITE<span>ARENA</span></h2>
+            <p style="font-size: 0.8rem; color: var(--gray);">Enter your name to start betting</p>
+            <input type="text" id="username-input" placeholder="Your Name">
+            <button class="btn-glow" onclick="userLogin()">ENTER ARENA</button>
+            <div class="admin-link" onclick="showAdminLogin()">Admin Access</div>
+        </div>
+    </div>
+
+    <div id="admin-login-screen" class="hidden">
+        <div class="auth-card" style="border: 1px solid var(--accent);">
+            <h3 style="color: var(--accent);">Secure Admin</h3>
+            <input type="password" id="admin-pass" placeholder="Admin Password">
+            <button class="btn-glow" style="background: var(--accent); color: white;" onclick="verifyAdmin()">UNLOCK DASHBOARD</button>
+            <div class="admin-link" onclick="showUserLogin()">Back to Player Login</div>
+        </div>
+    </div>
+
+    <div id="user-dashboard" class="hidden">
+        <div id="notif-bar">📢 Notice: Live betting features updated for all markets!</div>
+        <header class="glass">
+            <div style="font-weight: 800;">ELITE<span>ARENA</span></div>
+            <div class="balance-pill">
+                <span style="font-size: 0.7rem; color: var(--gray);">Balance</span>
+                <span id="user-bal-display" style="color: var(--primary); font-weight: 700;">1000.00</span>
+            </div>
+        </header>
+
+        <main id="home-view">
+            <div class="match-box">
+                <div style="text-align: center; font-weight: 600; margin-bottom: 5px;" id="m-names">St. Dennis vs St. John Bosco</div>
+                <div style="text-align: center; font-size: 0.65rem; color: var(--gray); margin-bottom: 15px;">Elite Premier League • Today 18:00</div>
+                
+                <div class="market-nav">
+                    <div class="market-tab active" id="tab-1x2" onclick="switchMarket('1x2')">Full Time (1X2)</div>
+                    <div class="market-tab" id="tab-dc" onclick="switchMarket('dc')">Double Chance</div>
+                    <div class="market-tab" id="tab-totals" onclick="switchMarket('totals')">Totals (O/U 2.5)</div>
+                    <div class="market-tab" id="tab-btts" onclick="switchMarket('btts')">Both Teams To Score</div>
+                </div>
+
+                <div id="market-container">
+                    </div>
+            </div>
+        </main>
+
+        <main id="history-view" class="hidden">
+            <h4 style="margin: 0 0 15px 0;">My Open Bets</h4>
+            <div id="bet-list"></div>
+        </main>
+
+        <nav class="glass">
+            <div class="nav-item active" id="n-h" onclick="tab('home')">HOME</div>
+            <div class="nav-item" id="n-b" onclick="tab('history')">MY BETS</div>
+            <div class="nav-item" onclick="alert('Deposits processed via Admin WhatsApp')">DEPOSIT</div>
+        </nav>
+    </div>
+
+    <div id="admin-dashboard" class="hidden">
+        <div class="admin-page">
+            <button class="logout-btn" onclick="location.reload()">LOGOUT</button>
+            <h2 style="color: var(--accent);">Admin Management</h2>
+
+            <div class="admin-card">
+                <h4>1. Update Balance Manually</h4>
+                <input type="number" id="manual-bal" placeholder="Enter New Balance (e.g. 5000)">
+                <button class="btn-glow" onclick="updateBalance()">Update Player Balance</button>
+            </div>
+
+            <div class="admin-card">
+                <h4>2. App Features (Odds & Teams)</h4>
+                <p style="font-size: 0.7rem; color: var(--gray);">Note: Manual update here overrides the 1X2 market.</p>
+                <input type="text" id="adm-t1" placeholder="Home Team Name">
+                <input type="text" id="adm-t2" placeholder="Away Team Name">
+                <div style="display:flex; gap:10px;">
+                    <input type="number" id="adm-o1" placeholder="Odds 1">
+                    <input type="number" id="adm-ox" placeholder="Odds X">
+                    <input type="number" id="adm-o2" placeholder="Odds 2">
+                </div>
+                <button class="btn-glow" style="background:var(--accent); color:white" onclick="updateAppFeatures()">Update Match Info</button>
+            </div>
+
+            <div class="admin-card">
+                <h4>3. Global Notification</h4>
+                <input type="text" id="adm-notif" placeholder="Enter notification text...">
+                <button class="btn-glow" style="background:#444; color:white" onclick="updateNotif()">Push Notification</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="bet-slip" class="hidden glass">
+        <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="font-size: 0.6rem; color: var(--gray); text-transform: uppercase;" id="slip-market-name">Market</div>
+            <span onclick="closeSlip()" style="cursor:pointer; font-size: 1.5rem;">&times;</span>
+        </div>
+        <h4 id="slip-team" style="margin:0 0 15px 0">Selection</h4>
+        <input type="number" id="stake" placeholder="Stake ($)" oninput="calc()">
+        <div style="margin: 10px 0; font-size: 0.8rem; display: flex; justify-content: space-between;">
+            <span>Potential Return:</span> <span id="win-amt" style="color:var(--primary); font-weight:800;">$0.00</span>
+        </div>
+        <button class="btn-glow" onclick="placeBet()">PLACE BET</button>
+    </div>
+
+    <script>
+        let balance = 1000.00;
+        let bets = [];
+        let teams = { t1: "St. Dennis", t2: "St. John Bosco" };
+        
+        // Statistical-based odds setup
+        let markets = {
+            '1x2': {
+                'Home': 2.10, // Strong favorite
+                'Draw': 3.80,
+                'Away': 3.17
+            },
+            'dc': {
+                '1X (Home/Draw)': 1.15,
+                '12 (Home/Away)': 1.25,
+                'X2 (Draw/Away)': 2.15
+            },
+            'totals': {
+                'Over 2.5': 1.72, // High scoring expectation
+                'Under 2.5': 2.05
+            },
+            'btts': {
+                'Yes': 1.85,
+                'No': 1.95
+            }
+        };
+
+        let currentMarket = '1x2';
+        let activeSelection = "";
+        let activeOddValue = 0;
+
+        // --- AUTH LOGIC ---
+        function userLogin() {
+            const name = document.getElementById('username-input').value;
+            if(!name) return alert("Enter your name");
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('user-dashboard').classList.remove('hidden');
+            switchMarket('1x2'); // Initial load
+        }
+
+        function showAdminLogin() {
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('admin-login-screen').classList.remove('hidden');
+        }
+
+        function showUserLogin() {
+            document.getElementById('admin-login-screen').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+        }
+
+        function verifyAdmin() {
+            const pass = document.getElementById('admin-pass').value;
+            if(pass === "admin123") {
+                document.getElementById('admin-login-screen').classList.add('hidden');
+                document.getElementById('admin-dashboard').classList.remove('hidden');
+            } else {
+                alert("Incorrect Password!");
+            }
+        }
+
+        // --- CORE UI LOGIC ---
+        function switchMarket(marketId) {
+            currentMarket = marketId;
+            document.querySelectorAll('.market-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + marketId).classList.add('active');
+            
+            const container = document.getElementById('market-container');
+            const currentData = markets[marketId];
+            
+            // Grid layout depends on how many options (2 or 3)
+            const isThree = Object.keys(currentData).length === 3;
+            container.className = isThree ? "odds-grid three" : "odds-grid";
+            
+            container.innerHTML = Object.keys(currentData).map(key => `
+                <div class="odd-card" onclick="openSlip('${key}', ${currentData[key]})">
+                    <span class="odd-label">${key}</span>
+                    <span class="odd-val">${currentData[key].toFixed(2)}</span>
+                </div>
+            `).join('');
+        }
+
+        // --- ADMIN FUNCTIONS ---
+        function updateBalance() {
+            const newBal = document.getElementById('manual-bal').value;
+            if(!newBal) return;
+            balance = parseFloat(newBal);
+            document.getElementById('user-bal-display').innerText = balance.toFixed(2);
+            alert("Balance updated to $" + balance);
+        }
+
+        function updateAppFeatures() {
+            const t1 = document.getElementById('adm-t1').value;
+            const t2 = document.getElementById('adm-t2').value;
+            const o1 = document.getElementById('adm-o1').value;
+            const ox = document.getElementById('adm-ox').value;
+            const o2 = document.getElementById('adm-o2').value;
+
+            if(t1) teams.t1 = t1;
+            if(t2) teams.t2 = t2;
+            if(o1) markets['1x2']['Home'] = parseFloat(o1);
+            if(ox) markets['1x2']['Draw'] = parseFloat(ox);
+            if(o2) markets['1x2']['Away'] = parseFloat(o2);
+
+            document.getElementById('m-names').innerText = `${teams.t1} vs ${teams.t2}`;
+            if(currentMarket === '1x2') switchMarket('1x2');
+            alert("App features updated!");
+        }
+
+        function updateNotif() {
+            const txt = document.getElementById('adm-notif').value;
+            document.getElementById('notif-bar').innerText = "📢 " + txt;
+            alert("Notification pushed!");
+        }
+
+        // --- USER FUNCTIONS ---
+        function openSlip(selection, odd) {
+            activeSelection = selection;
+            activeOddValue = odd;
+            document.getElementById('slip-market-name').innerText = currentMarket.replace('btts', 'Both Teams to Score').toUpperCase();
+            document.getElementById('slip-team').innerText = selection;
+            document.getElementById('bet-slip').classList.remove('hidden');
+        }
+
+        function closeSlip() { document.getElementById('bet-slip').classList.add('hidden'); }
+
+        function calc() {
+            const s = document.getElementById('stake').value;
+            document.getElementById('win-amt').innerText = "$" + (s * activeOddValue).toFixed(2);
+        }
+
+        function placeBet() {
+            const s = parseFloat(document.getElementById('stake').value);
+            if(s > balance || s <= 0 || isNaN(s)) return alert("Invalid stake or insufficient balance!");
+            
+            balance -= s;
+            document.getElementById('user-bal-display').innerText = balance.toFixed(2);
+            
+            bets.unshift({
+                market: currentMarket.toUpperCase(),
+                selection: activeSelection,
+                stake: s,
+                odd: activeOddValue,
+                payout: (s * activeOddValue).toFixed(2)
+            });
+            
+            renderBets();
+            closeSlip();
+            document.getElementById('stake').value = "";
+        }
+
+        function renderBets() {
+            document.getElementById('bet-list').innerHTML = bets.map(b => `
+                <div class="match-box" style="padding: 12px; font-size: 0.8rem; border-left: 4px solid var(--primary);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span style="color:var(--gray); font-size:0.65rem;">${b.market}</span>
+                        <span style="color:var(--primary); font-weight:700;">Open</span>
+                    </div>
+                    <strong>${b.selection}</strong><br>
+                    <div style="margin-top:8px; display:flex; justify-content:space-between; color:var(--gray);">
+                        <span>Stake: $${b.stake} @ ${b.odd}</span>
+                        <span style="color:white;">Return: $${b.payout}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function tab(v) {
+            document.getElementById('home-view').classList.toggle('hidden', v !== 'home');
+            document.getElementById('history-view').classList.toggle('hidden', v !== 'history');
+            document.getElementById('n-h').classList.toggle('active', v === 'home');
+            document.getElementById('n-b').classList.toggle('active', v === 'history');
+        }
+    </script>
+</body>
+</html>
